@@ -1,6 +1,7 @@
 """
 Date            Ver No.     Author      History
 01/23/2018      V0.1        Scott Yang  First version
+01/23/2018      V0.2        Scott Yang  Add PM filter,X2HO..
 
 """
 # ! python3.6
@@ -14,10 +15,10 @@ from tkinter import *
 from threading import Thread
 
 table = {}
-PM = "M8006C268"
+PM = "M8006C268"    #Default PM filter
 
 # Data frame arrangement
-arrange = ["Time", "Cell ID", "UE ID", "CRNTI", "VoLTE", "Error","Failure Phase","S1 Rel Cause", "PM"]
+arrange = ["Time", "Cell ID", "UE ID", "CRNTI", "VoLTE", "Error","Failure Phase","S1 Rel Cause","Out Cause", "PM"]
 err_list = []
 
 def browse_button():
@@ -41,9 +42,12 @@ def parse_data(data_frame, ErrType, table): #Data parser funcation for different
         table["Time"] = row[" eNB Start Time"]
         table["Failure Phase"] = row[" Failure Phase"]
         table["S1 Rel Cause"] = row[" S1 Rel Cause"]
+        table["Out Cause"] = row[" Out Cause"]
 
         if ErrType == "rlc":
             table["Error"] = row[" Outgoing HO Cause"]
+        elif ErrType == "x2fail":
+            table["Error"] = row[" Out Cause"]
         else:
             table["Error"] = row[" RLF Ind List"]
         # Need to use dict.copy(),otherwise are just adding references to the same dictionary over and over again:
@@ -60,6 +64,7 @@ def write_file(data, filetype, write_path): #This funcation is to save the ouptu
         status.insert(END, "Oops! Please make sure the output .xlsx are close..." + '\n')
 
 def emil_parser():  #This is starter funcation after "Run" is clicked
+    PM = pm_value.get()
     print("Start Parsing")
     status.insert(END,"Start parsing..." + '\n')
     current_path = filename + "//*.csv" #file name is getting from the "browse_button" tk funcation
@@ -92,9 +97,15 @@ def emil_parser():  #This is starter funcation after "Run" is clicked
         puschrlfdf = df[df[' RLF Ind List'].str.contains(" PuschRlf_ON")]
         parse_data(puschrlfdf, "puschrlf", table)
 
-    # Prepare to output to excel file
-    output = pd.DataFrame(err_list)
-    write_file(output, "All_Data", write_path)
+        # Select all call with Out Cause == " X2 HO Failed"
+        print("List of X2 HO Failed...")
+        status.insert(END, "List of X2 HO Failed..." + '\n')
+        x2faildf = df[df[' Out Cause'].str.contains(" X2 HO Failed")]
+        parse_data(x2faildf, "x2fail", table)
+
+        # Prepare to output to excel file
+        output = pd.DataFrame(err_list)
+        write_file(output, "All_Data", write_path)
 
     # filter only conatains with the specidfic PM affects KPI
     kpidf = output[output['PM'].str.contains(PM)]
@@ -120,8 +131,19 @@ lable.grid(row=1,column=0, sticky=W)
 select_path=Text(window,height=1,width=30)
 select_path.grid(row=1,column=0, sticky=E)
 
+#Label for PM counter entry
+PM_lable=Label(window,text="PM counter filter:  ")
+PM_lable.grid(row=2,column=0, sticky=W)
+
+#Print folder path
+pm_value=StringVar()
+PM_Filter=Entry(window,textvariable=pm_value)
+PM_Filter.grid(row=2,column=0, sticky=E)
+PM_Filter.insert(END,"M8006C268")
+
+
 #Run button
-b1=Button(window,text="Run", command=emil_parser)
+b1=Button(window,text="Run", command = emil_parser)
 b1.grid(row=3,column=0, sticky=W)
 
 #Status
@@ -129,9 +151,16 @@ status=Text(window,height=15,width=45)
 status.grid(row=4,column=0)
 
 #Button for result locator
-b1=Button(window,text="Results Folder", command=result_button)
+b1=Button(window,text="Results Folder", command = result_button)
 b1.grid(row=21,column=0, sticky=W)
 
+#Button for Exit
+b1=Button(window,text="Exit",command = lambda window = window:quit(window))
+b1.grid(row=21,column=0)
+
+#Button for About
+b1=Button(window,text="About")
+b1.grid(row=21,column=0,sticky=E)
 
 window.mainloop()
 #### End of Tk GUI section ######
