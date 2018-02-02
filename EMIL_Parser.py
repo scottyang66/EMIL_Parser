@@ -15,7 +15,7 @@ import glob
 table = {}
 PM = "M8006C268"
 
-# Data frame arrangemnet
+# Data frame arrangement
 arrange = ["Time", "Cell ID", "UE ID", "CRNTI", "VoLTE", "Error", "PM"]
 err_list = []
 
