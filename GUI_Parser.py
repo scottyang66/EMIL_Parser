@@ -3,7 +3,7 @@ Date            Ver No.     Author      History
 01/23/2018      V0.1        Scott Yang  First version
 01/23/2018      V0.2        Scott Yang  Add PM filter,X2HO..
 01/25/2018      V0.3        Scott Yang  Add S1 Release cause
-
+02/01/2018      V0.4        Scott Yang  Add "AckNackRlf_ON" in RLF indication
 """
 # ! python3.6
 import pandas as pd
@@ -52,7 +52,7 @@ def parse_data(data_frame, ErrType, table): #Data parser funcation for different
             table["Error"] = row[" Out Cause"]
         elif ErrType == "s1uel":
             table["Error"] = row[" S1 Rel Cause"]
-        else: #This will take care both "cqirlf" and "puschrlf" bcz both are belong to " RLF Ind List"
+        else: #This will take care both "cqirlf","puschrlf" and "AckNackRlf_ON" bcz all are belong to " RLF Ind List"
             table["Error"] = row[" RLF Ind List"]
         # Need to use dict.copy(),otherwise are just adding references to the same dictionary over and over again:
         err_list.append(table.copy())
@@ -89,18 +89,24 @@ def emil_parser():  #This is starter funcation after "Run" is clicked
         rlcdf = df[df[' Outgoing HO Cause'] == " Intra Cell: MaxRlcRetrans"]
         parse_data(rlcdf, "rlc", table)
 
-        # Select all call with Outgoing HO Cause == " CqiRlf"
+        # Select all call with RLF Ind List == " CqiRlf"
         print("List of CqiRLF...")
         status.insert(END, "List of CqiRLF..." + '\n')
         cqirlfdf = df[df[' RLF Ind List'].str.contains(" CqiRlf_ON")]
         parse_data(cqirlfdf, "cqirlf", table)
 
-        # Select all call with Outgoing HO Cause == " PuschRlf"
+        # Select all call with RLF Ind List == " PuschRlf"
         print("List of PuschRLF...")
         status.insert(END, "List of PuschRLF..." + '\n')
         puschrlfdf = df[df[' RLF Ind List'].str.contains(" PuschRlf_ON")]
         parse_data(puschrlfdf, "puschrlf", table)
 
+        # Select all call with RLF Ind List == " AckNackRlf_ON"
+        print("List of AckNackRlf_ON...")
+        status.insert(END, "List of AckNackRlf_ON..." + '\n')
+        acknackrlfdf = df[df[' RLF Ind List'].str.contains(" AckNackRLf_ON")]
+        parse_data(acknackrlfdf, "AckNackRLf_ON", table)
+        
         # Select all call with Out Cause == " X2 HO Failed"
         print("List of X2 HO Failed...")
         status.insert(END, "List of X2 HO Failed..." + '\n')
